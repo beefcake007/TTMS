@@ -1,0 +1,329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>售票管理</title>
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/demo/demo.css">
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/locale/easyui-lang-zh_CN.js"></script>
+<link rel="stylesheet" type="text/css" href="seat-charts/css/jquery.seat-charts.css">
+<link rel="stylesheet" type="text/css" href="seat-charts/css/style.css">
+<link rel="stylesheet" href="bootstrap3/css/bootstrap.min.css ">
+<link rel="stylesheet" href="bootstrap3/css/bootstrap-theme.css">
+<script type="text/javascript" src="bootstrap3/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="seat-charts/js/jquery.seat-charts.min.js"></script>
+<script type="text/javascript">
+	var url;
+	function searchSchedule(){
+		$('#dg').datagrid('load',{
+			s_movieName:$("#s_movieName").val(),
+			s_hallId:$('#s_hallId').combobox("getValue")
+		});
+	}
+	
+	function openticketDialog(){
+		var selectedRows=$("#dg").datagrid('getSelections');
+		if(selectedRows.length!=1){
+			$.messager.alert('系统提示','请选择一个剧目！');
+			return;
+		}
+				
+		var row=selectedRows[0];
+		$.post("seat?action=ticketSale",{scheduleId:row.scheduleId},function(result){
+			var result=eval('('+result+')');
+			var schedulePrice=result.ticket.schedulePrice;
+			var seat=result.seat;
+			var scheduleBeginDate=result.ticket.scheduleBeginDate;
+			var movieName=result.ticket.movieName;
+			var hallRow=result.ticket.hallRow;
+			var hallColumn=result.ticket.hallColumn;
+			$("#dlg").dialog("open").dialog("setTitle","售票管理");
+			/*alert(hallColumn);
+			alert(hallRow);
+			alert(movieName);
+			alert(schedulePrice);
+			alert(scheduleBeginDate);
+			alert(seat);*/
+			$("#movieName").text(movieName);
+			var price =schedulePrice; //票价 
+			var x=hallRow;
+			var y=hallColumn;
+			var map = [];
+		    for(var i=0;i<x;i++){
+		        map[i]="";
+		        for(var j=0;j<y;j++){
+		            map[i]+="a";
+		        }
+		    }
+		var get=seat;
+		var seatBack="";
+		$(document).ready(function() {
+		 var $cart = $('#selected-seats'), //座位区 
+		 $counter = $('#counter'), //票数 
+		 $total = $('#total'); //总计金额 
+		 var sc = $('#seat-map').seatCharts({ 
+		 //座位图 
+		 map:map, 
+		 legend : { //定义图例 
+		  node : $('#legend'), 
+		  items : [ 
+		  [ 'a', 'available', '可选座' ], 
+		  [ 'a', 'unavailable', '已售出'] 
+		  ]   
+		 }, 
+		 click: function () { //点击事件 
+		  if (this.status() == 'available') { //可选座 
+		  seat+=this.settings.row+1+'_'+this.settings.label+" ";
+		  seatBack+=this.settings.row+1+'_'+this.settings.label+" ";
+		  //alert(seatBack);
+		  $("#seatSale").val(seatBack);
+		  $('<li>'+(this.settings.row+1)+'排'+this.settings.label+'座</li>') 
+		   .attr('id', 'cart-item-'+this.settings.id) 
+		   .data('seatId', this.settings.id) 
+		   .appendTo($cart); 
+		  $counter.text(sc.find('selected').length+1); 
+		  $total.text(recalculateTotal(sc)+price); 
+		  return 'selected'; 
+		  } else if (this.status() == 'selected') { //已选中 
+		  //更新数量 
+		  $counter.text(sc.find('selected').length-1); 
+		  //更新总计 
+		  $total.text(recalculateTotal(sc)-price); 
+		  //删除已预订座位 
+		  $('#cart-item-'+this.settings.id).remove(); 
+		  //可选座 
+		  return 'available'; 
+		  } else if (this.status() == 'unavailable') { //已售出 
+		  	return 'unavailable'; 
+		  }else{ 
+		  	return this.style(); 
+		  } 
+		 } 
+		 }); 
+		 //已售出的座位  
+		 sc.get(get).status('unavailable'); 
+		}); 
+		//计算总金额 
+		function recalculateTotal(sc) { 
+		 var total = 0; 
+		 sc.find('selected').each(function () { 
+		 total += price; 
+		 }); 
+		 return total; 
+		}
+		});
+		
+	}
+	
+	function closeTicketAddDialog(){
+		$("#dlg").dialog("close");
+		location.reload();
+	}
+	
+	function hello(){
+		var selectedRows=$("#dg").datagrid('getSelections');
+		var row=selectedRows[0];
+		var scheduleId=row.scheduleId;
+		var seatBuy=$("#seatSale").val();
+		//alert(seatBuy);
+		$.messager.confirm("系统提示","您确认要购买这些座位吗？",function(r){
+			if(r){
+			//window.location.href="seat?action=buy&scheduleId="+${saleList.scheduleId}+"&seatBuy="+seat;
+				$.post("seat?action=buy",{scheduleId:scheduleId,seatBuy:seatBuy},function(result){
+					var result=eval('('+result+')');
+					if(result.success){
+						alert("购票成功");
+						location.reload();
+					}else{
+						alert(result.errorMsg);
+						location.reload();
+					}
+				});
+			}
+		});
+	}
+</script>
+<style type="text/css">
+.row{
+	margin-top:50px;
+}
+.front{
+	width: 650px;
+	height:30px;
+	margin: 5px 32px 45px 32px;
+	background-color: #f0f0f0;
+	color: #666;
+	text-align: center;
+	padding: 3px;
+	border-radius: 5px;
+} 
+.booking-details {
+	margin:50px;
+	float: left;
+	position: relative;
+	width:200px;
+	height: 450px;
+} 
+.booking-details h3 {
+	margin: 5px 5px 0 0;
+	font-size: 16px;
+} 
+.booking-details p{
+	line-height:26px; 
+	font-size:16px; 
+	color:#999;
+} 
+.booking-details p span{
+	color:#666
+} 
+div.seatCharts-cell {
+	color: #182C4E;
+	line-height: 25px;
+	width:20px;
+	height:20px;
+	margin: 5px;
+	float: left;
+	text-align: center;
+	outline: none;
+	font-size: 13px;
+} 
+div.seatCharts-seat {
+	color: #fff;
+	cursor: pointer;
+	-webkit-border-radius:5px;
+	-moz-border-radius:5px;
+	border-radius: 5px;
+} 
+div.seatCharts-row {
+	height: 50px;
+	float:center;
+} 
+div.seatCharts-seat.available {
+	background-color: #D8D8D8;
+	background-image:url(images/座位.png);
+	background-repeat:no-repeat;
+	background-size:80%,80%;
+	background-position:center;
+} 
+div.seatCharts-seat.focused {
+	background-color: #E0E0E0;
+	border: none;
+	background-image:url(images/座位-选中.png);
+	background-repeat:no-repeat;
+	background-size:80%,80%;
+	background-position:center;
+} 
+div.seatCharts-seat.selected {
+	background-color: #E8E8E8;
+	cursor: not-allowed;
+	background-image:url(images/座位-selected.png);
+	background-repeat:no-repeat;
+	background-size:80%,80%;
+	background-position:center;
+} 
+div.seatCharts-seat.unavailable {
+	background-color: #E8E8E8;
+	cursor: not-allowed;
+	background-image:url(images/座位预定.png);
+	background-repeat:no-repeat;
+	background-size:80%,80%;
+	background-position:center;
+} 
+div.seatCharts-container {
+	width: 800px;
+	padding: 20px;
+	clear: both;
+	display: block;
+	margin:auto;
+} 
+div.seatCharts-legend {
+	padding-left: 0px;
+	position: absolute;
+	bottom: 16px;
+} 
+ul.seatCharts-legendList {
+	padding-left: 0px;
+} 
+.seatCharts-legendItem{
+	float:left; 
+	width:90px;
+	margin-top: 10px;
+	line-height: 2;
+} 
+span.seatCharts-legendDescription {
+	margin-left: 5px;
+	line-height: 30px;
+}  
+#selected-seats {
+	max-height: 150px;
+	overflow-y: auto;
+	overflow-x: none;
+	width: 200px;
+} 
+#selected-seats li{
+	float:left; 
+	width:72px; 
+	height:26px; 
+	line-height:26px; 
+	border:1px solid #d3d3d3;
+}
+</style>
+</head>
+<body style="margin:1px;">
+<table id="dg" title="售票管理" class="easyui-datagrid" fitColumns="true" pageSize="20" pagination="true" rownumbers="true" url="schedule?action=list" fit="true" toolbar="#tb">
+	<thead>
+		<tr>
+			<th field="cb" checkbox="true" align="center"></th>
+			<th field="scheduleId" width="50" align="center">编号</th>
+			<th field="movieId" width="50" align="center" hidden="true">电影ID</th>
+			<th field="movieName" width="100" align="center">电影名</th>
+			<th field="hallId" width="50" align="center" hidden="true">演出厅ID</th>
+			<th field="hallName" width="100" align="center">演出厅</th>
+			<th field="schedulePrice" width="50" align="center">票价</th>
+			<th field="scheduleBeginDate" width="100" align="center">剧目开始时间</th>
+			<th field="movieDuration" width="50" align="center">剧目时长</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="tb">
+	<div>
+		<a href="javascript:openticketDialog()" class="easyui-linkbutton" iconCls="icon-add" plain="true">售票</a>
+	</div>
+	<div>
+		&nbsp;电影名：&nbsp;<input type="text" id="s_movieName" name="s_movieName" size="20" onkeydown="if(event.keyCode==13) searchSchedule()">
+		&nbsp;演出厅:&nbsp;<input class="easyui-combobox" id="s_hallId" name="s_hallId" size="20" data-options="editable:false,  panelHeight:'auto', valueField:'hallId',textField:'hallName' ,url:'hall?action=comBoList'">
+		&nbsp;<a href="javascript:searchSchedule()" class="easyui-linkbutton" iconCls="icon-search" plain="true">搜索</a>
+	</div>
+</div>
+
+<div id="dlg" class="easyui-dialog" closed="true" style="width:100%;height:100%;padding:10px 20px;" buttons="#dlg-buttons">
+	<div class="row">
+		<div class="col-xs-12 col-md-8">
+			<div id="seat-map"> 
+			 	<div class="front">屏幕</div>   
+			</div> 
+		</div>
+  		<div class="col-xs-6 col-md-4">
+  			<div class="booking-details"> 
+				 <p>影片：<span id="movieName"></span></p> 
+				 <p>时间：<span></span></p> 
+				 <p>座位：</p> 
+				 <ul id="selected-seats"></ul> 
+				 <input type="hidden" id="seatSale" value="1">
+				 <p>票数：<span id="counter">0</span></p> 
+				 <p>总计：<b>￥<span id="total">0</span></b></p> 
+				 <button class="checkout-button btn btn-success" onclick="hello()">确定购买</button> 
+				 <div id="legend"></div> 
+			</div>
+  		</div>
+	</div>
+</div>
+<div id="dlg-buttons">
+	<a href="javascript:closeTicketAddDialog()" class="easyui-linkbutton" iconCls="icon-cancel">关闭</a>
+</div>
+</body>
+</html>

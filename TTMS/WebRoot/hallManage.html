@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>演出厅管理</title>
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/demo/demo.css">
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.easyui.min.js"></script>
+<script type="text/javascript">
+	var url;
+	
+	function searchHall(){
+		$("#dg").datagrid('load',{
+			s_hallName:$("#s_hallName").val()
+		});
+	}
+	
+	function openHallAddDialog(){
+		$("#dlg").dialog("open").dialog("setTitle","添加演出厅");
+		url="hall?action=save";
+	}
+	
+	function closeHallSaveDialog(){
+		$("#dlg").dialog("close");
+		$("#fm").form("clear");
+	}
+	
+	function saveHall(){
+		$("#fm").form('submit',{
+			url:url,
+			onSubmit:function(){
+				return $(this).form("validate");
+			},
+			success:function(result){
+				var result=eval('('+result+')');
+				if(result.errorMsg){
+					$.messager.alert("系统提示","<font color=red>"+result.errorMsg+"</font>");
+					return;
+				}else{
+					$.messager.alert('系统提示',"保存成功！");
+					closeHallSaveDialog();
+					$("#dg").datagrid("reload");
+				}
+			}
+		});
+	}
+	
+	function openHallModifyDialog(){
+		var selectedRows=$("#dg").datagrid("getSelections");
+		if(selectedRows.length==0){
+			$.messager.alert("系统提示","请选择一个要修改的演出厅！");
+			return;
+		}
+		var row=selectedRows[0];
+		$("#dlg").dialog("open").dialog("setTitle","修改演出厅");
+		$("#fm").form("load",row);
+		url="hall?action=save&hallId="+row.hallId;
+	}
+	
+	function deleteHall(){
+		var selectedRows=$("#dg").datagrid("getSelections");
+		if(selectedRows.length==0){
+			$.messager.alert("系统提示","请选择要删除的演出厅");
+			return;
+		}
+		
+		var strIds=[];
+		for(var i=0;i<selectedRows.length;i++){
+			strIds.push(selectedRows[i].hallId);
+		}
+		var Ids=strIds.join(",");
+		$.messager.confirm("系统提示","您确认要删除这<font color=red>"+selectedRows.length+"</font>条数据吗？",function(r){
+			if(r){
+				$.post("hall?action=delete",{delIds:Ids},function(result){
+					if(result.success){
+						$.messager.alert("系统提示","您已成功删除<font color=red>"+result.delNums+"</font>条数据！");
+						$("#dg").datagrid("reload");
+					}else{
+						$.messager.alert("系统提示",'<font color=red>'+selectedRows[result.errorIndex].hallName+'</font>'+result.errorMsg);
+					}
+				},"json");
+			}
+		});
+	}
+</script>
+</head>
+
+<body style="margin:1px;">
+<table id="dg" title="演出厅管理" class="easyui-datagrid" fitColumns="true" pagination="true" rownumbers="true"
+		url="hall?action=list" fit="true" toolbar="#tb">
+	<thead>
+		<tr>
+			<th field="cb" align="center" checkbox="true"></th>
+			<th field="hallId" width="50" align="center">编号</th>
+			<th field="hallName" width="100" align="center">演出厅名称</th>
+			<th field="hallRow" width="50" align="center">演出厅行数</th>
+			<th field="hallColumn" width="50" align=center>演出厅列数</th>
+			<th field="hallDescription" width="150" align="center">演出厅描述</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="tb">
+<div>
+	<a href="javascript:openHallAddDialog()" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加</a>
+	<a href="javascript:openHallModifyDialog()" class="easyui-linkbutton" iconCls="icon-edit" plain="true">修改</a>
+	<a href="javascript:deleteHall()" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+</div>	
+<div>
+	&nbsp;演出厅名称&nbsp;<input id="s_hallName" name="s_hallName" type="text" size="20" onKeydown="if(event.keyCode==13) searchHall()">
+	<a href="javascript:searchHall()" class="easyui-linkbutton" iconCls="icon-search" plain="true">搜索</a>
+</div>
+</div>
+
+<div id="dlg" class="easyui-dialog" style="width: 500px;height: 350px;padding: 10px 20px" closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post">
+		<table style="border-collapse:separate; border-spacing:5px 15px;">
+			<tr>
+				<td>演出厅名称</td>
+				<td><input type="text" id="hallName" name="hallName" class="easyui-validatebox" required="true"></td>
+			</tr>
+			<tr>
+				<td>演出厅行数</td>
+				<td><input type="text" id="hallRow" name="hallRow" class="easyui-validatebox" required="true"></td>
+			</tr>
+			<tr>
+				<td>演出厅列数</td>
+				<td><input type="text" id="hallColumn" name="hallColumn" class="easyui-validatebox" required="true"></td>
+			</tr>
+			<tr>
+				<td valign="top">备注</td>
+				<td colspan="2">
+					<textarea rows="7" cols="50" id="hallDescription" name="hallDescription"></textarea>
+				</td>
+			</tr>
+		</table>
+	</form>
+</div>
+
+<div id="dlg-buttons">
+	<a href="javascript:saveHall()" class="easyui-linkbutton" iconCls="icon-ok" plain="true">保存</a>
+	<a href="javascript:closeHallSaveDialog()" class="easyui-linkbutton" iconCls="icon-cancel" plain="true">取消</a>
+</div>
+</body>
+
+</html>

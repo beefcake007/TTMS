@@ -1,0 +1,64 @@
+body{
+	margin:0px;
+	padding:0px;
+}
+.container{
+	margin:0px;
+	padding:0px;
+}
+.header{
+	margin-top:50px;
+	background: #fff;
+	padding: 2em 1em 1.8em;
+	border-top-left-radius: 3px;
+	-webkit-border-top-left-radius: 3px;
+	-moz-border-top-left-radius: 3px;
+	-o-border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+	-webkit-border-top-right-radius: 3px;
+	-moz-border-top-right-radius: 3px;
+	-o-border-top-right-radius: 3px;
+}
+.slider {
+	position: relative;
+}
+.content{
+	background: #E8E8E8;
+	padding: 2em 1em 1.8em;
+	border-top-left-radius: 3px;
+	-webkit-border-top-left-radius: 3px;
+	-moz-border-top-left-radius: 3px;
+	-o-border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+	-webkit-border-top-right-radius: 3px;
+	-moz-border-top-right-radius: 3px;
+	-o-border-top-right-radius: 3px;
+}
+.content .card{
+	clear: both;
+	display: block;
+	margin:auto;
+	width:100%;
+}
+.content .row{
+	margin:20px 50px 30px 50px;
+}
+.footer{
+	text-align:center;
+	background: #D8D8D8;
+	padding: 2em 1em 1.8em;
+	border-top-left-radius: 3px;
+	-webkit-border-top-left-radius: 3px;
+	-moz-border-top-left-radius: 3px;
+	-o-border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+	-webkit-border-top-right-radius: 3px;
+	-moz-border-top-right-radius: 3px;
+	-o-border-top-right-radius: 3px;
+}
+.buyticket{
+	clear: both;
+	display: block;
+	margin:auto;
+	width:100%;
+}

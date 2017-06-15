@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>剧目管理</title>
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/demo/demo.css">
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/datagrid-detailview.js"></script>
+<script type="text/javascript">
+	$(function(){
+            $('#dg').datagrid({
+                view: detailview,
+                detailFormatter:function(index,row){
+                    return '<div class="ddv"></div>';
+                },
+                onExpandRow: function(index,row){
+                    var ddv = $(this).datagrid('getRowDetail',index).find('div.ddv');
+                    ddv.panel({
+                        border:false,
+                        cache:true,
+                        href:'show_form.jsp?index='+index,
+                        onLoad:function(){
+                            $('#dg').datagrid('fixDetailRowHeight',index);
+                            $('#dg').datagrid('selectRow',index);
+                            $('#dg').datagrid('getRowDetail',index).find('form').form('load',row);
+                        }
+                    });
+                    $('#dg').datagrid('fixDetailRowHeight',index);
+                }
+            });
+        });
+        function saveItem(index){
+            var row = $('#dg').datagrid('getRows')[index];
+            var url = row.isNewRecord ? 'movie?action=save' : 'movie?action=save&movieId='+row.movieId;
+            $('#dg').datagrid('getRowDetail',index).find('form').form('submit',{
+                url: url,
+                onSubmit: function(){
+                    return $(this).form('validate');
+                },
+                success: function(data){
+                    data = eval('('+data+')');
+                    data.isNewRecord = false;
+                    $('#dg').datagrid('collapseRow',index);
+                    $('#dg').datagrid('updateRow',{
+                        index: index,
+                        row: data.data
+                    });
+                }
+            });
+        }
+        function cancelItem(index){
+            var row = $('#dg').datagrid('getRows')[index];
+            if (row.isNewRecord){
+                $('#dg').datagrid('deleteRow',index);
+            } else {
+                $('#dg').datagrid('collapseRow',index);
+            }
+        }
+        function destroyItem(){
+            var row = $('#dg').datagrid('getSelected');
+            if (row){
+                $.messager.confirm('系统提示','您确定要删除这条记录吗?',function(r){
+                    if (r){
+                        var index = $('#dg').datagrid('getRowIndex',row);
+                        $.post("movie?action=delete",{id:row.movieId},function(result){
+						if(result.success){
+							$.messager.alert("系统提示","您已成功删除<font color=red>"+result.delNum+"</font>条数据！");
+							$("#dg").datagrid("reload");
+						}else{
+							$.messager.alert("系统提示",result.errorMsg);
+						}
+					},"json");
+                    }
+                });
+            }
+        }
+        function newItem(){
+            $('#dg').datagrid('appendRow',{isNewRecord:true});
+            var index = $('#dg').datagrid('getRows').length - 1;
+            $('#dg').datagrid('expandRow', index);
+            $('#dg').datagrid('selectRow', index);
+        }
+        
+        function searchMovie(){
+        	$("#dg").datagrid('load',{
+				s_movieName:$("#s_movieName").val()
+			});
+        }
+</script>
+</head>
+<body style="margin:1px;">
+<table id="dg" title="用户管理" class="easyui-datagrid" url="movie?action=list"
+            toolbar="#tb" pagination="true"  fitColumns="true" fit="true" singleSelect="true">
+	<thead>
+		<tr>
+			<th field="movieId" align="center" width="50">编号</th>
+			<th field="movieName" align="center" width="100">剧目名</th>
+			<th field="movieMainActor" align="center" width="100">剧目主演</th>
+			<th field="movieDirector" align="center" width="100">剧目导演</th>
+			<th field="movieDuration" align="center" width="100">剧目时长</th>
+			<th field="movieDescription" align="center" width="200">剧目介绍</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="tb">
+	<div>
+		<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newItem()">添加</a>
+		<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="destroyItem()">删除</a>
+	</div>
+	<div>
+		&nbsp;剧目名称&nbsp;<input id="s_movieName" name="s_movieName" type="text" size="20" onKeydown="if(event.keyCode==13) searchMovie()">
+		<a href="javascript:searchMovie()" class="easyui-linkbutton" iconCls="icon-search" plain="true">搜索</a>
+	</div>
+</div>
+</body>
+</html>

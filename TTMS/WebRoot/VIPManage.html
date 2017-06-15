@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>会员管理</title>
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="jquery-easyui-1.5.2/demo/demo.css">
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery-easyui-1.5.2/jquery.easyui.min.js"></script>
+<script type="text/javascript">
+	var url;
+	
+	function openCustomerAddDialog(){
+		$("#dlg").dialog("open").dialog("setTitle","添加会员信息");
+		$("#customerName").removeAttr("readonly");
+		url="vip?action=save";
+	}
+	
+	function openClassChooseDialog(){
+		$("#dlg2").dialog("open").dialog("setTitle","选择会员等级");
+	}
+	
+	function searchVip(){
+		$("#dg").datagrid('load',{
+			s_customerName:$("#s_customerName").val(),
+			s_classId:$("#s_classId").combobox("getValue")
+		});
+	}
+	
+	function searchClass(){
+		$("#dg2").datagrid('load',{
+			s_className:$("#s_className").val()
+		});
+	}
+	
+	function chooseClass(){
+		var selectedrows=$("#dg2").datagrid('getSelections');
+		if(selectedrows.length==0){
+			$.messager.alert("系统提示","请选择一个会员等级");
+			return ;
+		}
+		
+		var row=selectedrows[0];
+		$("#classId").val(row.classId);
+		$("#className").val(row.className);
+		closeClassDialog();
+	}
+	
+	function closeClassDialog(){
+		$("#s_className").val("");
+		$("#dg2").datagrid('load',{
+			s_className:$("#s_className").val()
+		});
+		$("#dlg2").dialog("close");
+	}
+	
+	function closeVipAddDialog(){
+		$("#dlg").dialog("close");
+		$("#fm").form("clear");
+	}
+	
+	function saveVip(){
+		$("#fm").form("submit",{
+			url:url,
+			onSubmit:function(){
+				return $(this).form("validate");
+			},
+			success:function(result){
+				var result=eval('('+result+')');
+				if(result.errorMsg){
+					$.messager.alert('系统提示',"<font color=red>"+result.errorMsg+"</font>");
+					return;
+				}else{
+					$.messager.alert('系统提示','保存成功！');
+					closeVipAddDialog();
+					$("#dg").datagrid("reload");
+				}
+			}
+		});
+	}
+	
+	function openVipModifyDialog(){
+		var selectedrows=$("#dg").datagrid('getSelections');
+		if(selectedrows.length==0){
+			$.messager.alert('系统提示','请选择一个要修改的会员！');
+			return;
+		}
+		
+		var row=selectedrows[0];
+		$("#dlg").dialog("open").dialog("setTitle","修改会员信息");
+		$("#fm").form('load',row);
+		$("#customerName").attr("readonly","readonly");
+		url="vip?action=save&customerId="+row.customerId;
+	}
+	
+	function deleteVip(){
+		var selectedrows=$("#dg").datagrid('getSelections');
+		if(selectedrows.length==0){
+			$.messager.alert('系统提示',"请选择要删除的会员");
+			return;
+		}
+		var strId=[];
+		for(var i=0;i<selectedrows.length;i++){
+			strId.push(selectedrows[i].customerId);
+		}
+		var Ids=strId.join(",");
+		$.messager.confirm("系统提示","您确认要删除这<font color=red>"+selectedrows.length+"</font>个用户吗？",function(r){
+			if(r){
+				$.post("vip?action=delete",{delIds:Ids},function(result){
+					if(result.success){
+						$.messager.alert("系统提示","您已成功删除<font color=red>"+result.delNums+"</font>个用户！");
+						$("#dg").datagrid("reload");
+					}else{
+						$.messager.alert("系统提示",result.errorMsg);
+					}
+				},"json");
+			}
+		});
+	}
+</script>
+</head>
+<body style="margin:1px;">
+<table id="dg" title="会员管理" class="easyui-datagrid" fitColumns="true" 
+	pagination="true" rownumbers="true" url="vip?action=list" fit="true" toolbar="#tb">
+	<thead>
+		<tr>
+			<th field="cb" checkbox="true" align="center"></th>
+			<th field="customerId" align="center" width="50">编号</th>
+			<th field="customerName" align="center" width="100">用户名</th>
+			<th field="customerPassWord" align="center" width="100">用户密码</th>
+			<th field="customerEmail" align="center" width="100">用户邮箱</th>
+			<th field="customerMobile" align="center" width="100">用户手机号</th>
+			<th field="classId" align="center" width="50" hidden="true">用户等级ID</th>
+			<th field="className" align="center" width="50">用户等级</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="tb">
+	<div>
+		<a href="javascript:openCustomerAddDialog()" class="easyui-linkbutton" iconCls="icon-add" plain="true">添加</a>
+		<a href="javascript:openVipModifyDialog()" class="easyui-linkbutton" iconCls="icon-edit" plain="true">修改</a>
+		<a href="javascript:deleteVip()" class="easyui-linkbutton" iconCls="icon-remove" plain="true">删除</a>
+	</div>
+	<div>
+		&nbsp;&nbsp;用户名：&nbsp;<input type="text" id="s_customerName" name="s_customerName" size="20" onKeydown="if(event.keyCode==13) searchVip()">
+		&nbsp;用户等级：&nbsp;<input id="s_classId" name="s_classId" class="easyui-combobox" size="20" data-options="editable:false,  panelHeight:'auto', valueField:'classId',textField:'className' ,url:'class?action=comBoList'">
+		&nbsp;<a href="javascript:searchVip()" class="easyui-linkbutton" iconCls="icon-search" plain="true">搜索</a>
+	</div>
+</div>
+
+<div id="dlg" class="easyui-dialog" style="width:400px;height:350px;padding:10px 20px;" closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post">
+		<table style="border-collapse:separate; border-spacing:5px 20px;">
+			<tr>
+				<td>用户名：</td>
+				<td><input type="text" id="customerName" name="customerName" class="easyui-validatebox" required="true" ></td>
+			</tr>
+			
+			<tr>
+				<td>用户密码：</td>
+				<td><input type="text" id="customerPassWord" name="customerPassWord" class="easyui-validatebox" required="true" ></td>
+			</tr>
+			
+			<tr>
+				<td>等级名称：</td>
+				<td><input type="hidden" id="classId" name="classId" ><input type="text" id="className" name="className" readonly="readonly" class="easyui-validatebox" required="true" ></td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+				<td cospan="2"><a href="javascript:openClassChooseDialog()" class="easyui-linkbutton">选择等级</a></td>
+			</tr>
+			
+			<tr>
+				<td>用户邮箱：</td>
+				<td><input type="text" id="customerEmail" name="customerEmail" class="easyui-validatebox" required="true" ></td>
+			</tr>
+			
+			<tr>
+				<td>用户手机号：</td>
+				<td><input type="text" id="customerMobile" name="customerMobile" class="easyui-validatebox" required="true" ></td>
+			</tr>
+		</table>
+	</form>
+</div>
+
+<div id="dlg-buttons">
+	<a href="javascript:saveVip()" class="easyui-linkbutton" iconCls="icon-ok">保存</a>
+	<a href="javascript:closeVipAddDialog()" class="easyui-linkbutton" iconCls="icon-cancel">关闭</a>
+</div>
+
+<div id="dlg2" class="easyui-dialog" iconCls="icon-search" style="width:500px;height:480px;padding:10px 20px;" closed="true" buttons="#dlg2-buttons">
+<div style="height:40px;" align="center">
+	角色名称：<input type="text" id="s_className" name="s_className" onKeydown="if(event.keyCode==13) searchClass()">
+	<a href="javascript:searchClass()" class="easyui-linkbutton" iconCls="icon-search" plain="true">搜索</a>
+</div>
+<div style="height:350px;">
+	<table id="dg2" title="查询结果" class="easyui-datagrid" fitColumns="true" pagination="true" singleSelect="true" rownumbers="true" url="class?action=list" fit="true" >
+		<thead>
+			<tr>
+				<th field="classId" width="50" align="center">编号</th>
+				<th field="className" width="100" align="center">会员名称</th>
+				<th field="classDescription" width="200" align="center">备注</th>
+			</tr>
+		</thead>
+	</table>
+</div>
+</div>
+
+<div id="dlg2-buttons">
+	<a href="javascript:chooseClass()" class="easyui-linkbutton" iconCls="icon-ok">确定</a>
+	<a href="javascript:closeClassDialog()" class="easyui-linkbutton" iconCls="icon-cancel">关闭</a>
+</div>
+</body>
+</html>
